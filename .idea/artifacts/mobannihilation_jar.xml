@@ -1,8 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="jar" name="mobannihilation:jar">
-    <output-path>$PROJECT_DIR$/out/artifacts/mobannihilation_jar</output-path>
-    <root id="archive" name="mobannihilation.jar">
-      <element id="module-output" name="mobannihilation" />
-    </root>
-  </artifact>
-</component>
