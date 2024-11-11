@@ -1,6 +1,5 @@
 package ru.peef.mobannihilation.commands;
 
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -39,8 +38,12 @@ public class GameCommand implements CommandExecutor {
                     case "leave":
                         gamePlayer.leaveArena(true);
                         break;
+                    // TODO: Combine runes
                     case "combine":
                         AnvilGUI.openAnvil(player);
+                        break;
+                    case "runes":
+                        gamePlayer.openRuneInventory();
                         break;
                     case "item":
                         gamePlayer.addItem(RarityItem.getRandom(gamePlayer), true);
@@ -78,18 +81,6 @@ public class GameCommand implements CommandExecutor {
                     } else {
                         player.sendMessage(ChatColor.RED + "Игрок не найден!");
                     }
-                }
-            }
-            if (args.length > 1) {
-                if (args[0].equals("path")) {
-                    StringBuilder path = new StringBuilder();
-
-                    for (int i = 1; i < args.length; i++) {
-                        path.append(args[i]);
-                    }
-
-                    MobAnnihilation.getConfiguration().set("options.worldedit_schematic_path", path.toString());
-                    player.sendMessage(ChatColor.GREEN + "Success");
                 }
             }
         }
