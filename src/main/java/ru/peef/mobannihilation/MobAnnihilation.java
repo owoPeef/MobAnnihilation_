@@ -5,6 +5,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.peef.mobannihilation.commands.GameCommand;
@@ -18,27 +19,21 @@ import ru.peef.mobannihilation.game.npcs.NPCDataHandler;
 import ru.peef.mobannihilation.game.npcs.NPCManager;
 import ru.peef.mobannihilation.game.players.GamePlayer;
 import ru.peef.mobannihilation.game.players.PlayerDataHandler;
-import ru.peef.mobannihilation.game.players.PlayerListener;
+import ru.peef.mobannihilation.listeners.EntityListener;
+import ru.peef.mobannihilation.listeners.PlayerListener;
 import ru.peef.mobannihilation.game.players.PlayerManager;
 import ru.peef.mobannihilation.holograms.Hologram;
+import ru.peef.mobannihilation.listeners.WorldListener;
 
 import java.io.File;
 
 public final class MobAnnihilation extends JavaPlugin {
     public static File configFile;
-    public static FileConfiguration config;
+    private static FileConfiguration config;
 
     @Override
     public void onEnable() {
         createConfig();
-
-        GameManager.init();
-
-        getCommand("game").setExecutor(new GameCommand());
-        getCommand("npc").setExecutor(new NPCCommand());
-        getCommand("world").setExecutor(new WorldCommand());
-        getServer().getPluginManager().registerEvents(new PlayerListener(), this);
-        getServer().getPluginManager().registerEvents(new AnvilGUI(), this);
 
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") == null) {
             getLogger().warning("Could not find PlaceholderAPI! This plugin is required.");
@@ -47,30 +42,24 @@ public final class MobAnnihilation extends JavaPlugin {
             new GameExpansion().register();
         }
 
+        GameManager.init();
+        PlayerDataHandler.init();
+        NPCDataHandler.init();
 
-        Bukkit.getScheduler().runTask(MobAnnihilation.getInstance(), () -> {
-            if (GameManager.BASIC_WORLD != null) {
-                GameManager.BASIC_WORLD.getEntities().stream()
-                        .filter(Entity::isValid)
-                        .forEach(Entity::remove);
-            }
+        NPCManager.init();
 
-            if (GameManager.ARENA_WORLD != null) {
-                GameManager.ARENA_WORLD.getEntities().stream()
-                        .filter(Entity::isValid)
-                        .forEach(Entity::remove);
-            }
+        new Hologram("top", GameManager.BASIC_WORLD, 5.5, 20.4, 0.5, ChatColor.YELLOW + (ChatColor.BOLD + "Топ игроков по уровню:"));
+        for (int i = 0; i < GameManager.SHOW_TOP_PLAYERS_COUNT; i++) {
+            new Hologram("top" + (i+1), GameManager.BASIC_WORLD, 5.5, 20 - (i * 0.3), 0.5, "%mobannihilation_top" + (i+1) + "%");
+        }
 
-            PlayerDataHandler.init();
-            NPCDataHandler.init();
-
-            NPCManager.init();
-
-            new Hologram("top", GameManager.BASIC_WORLD, 5.5, 20.4, 0.5, ChatColor.YELLOW + (ChatColor.BOLD + "Топ игроков по уровню:"));
-            for (int i = 0; i < GameManager.SHOW_TOP_PLAYERS_COUNT; i++) {
-                new Hologram("top" + (i+1), GameManager.BASIC_WORLD, 5.5, 20 - (i * 0.3), 0.5, "%mobannihilation_top" + (i+1) + "%");
-            }
-        });
+        getCommand("game").setExecutor(new GameCommand());
+        getCommand("npc").setExecutor(new NPCCommand());
+        getCommand("world").setExecutor(new WorldCommand());
+        getServer().getPluginManager().registerEvents(new PlayerListener(), this);
+        getServer().getPluginManager().registerEvents(new EntityListener(), this);
+        getServer().getPluginManager().registerEvents(new WorldListener(), this);
+        getServer().getPluginManager().registerEvents(new AnvilGUI(), this);
     }
 
     @Override
