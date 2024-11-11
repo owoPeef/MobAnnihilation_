@@ -8,7 +8,9 @@ import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -23,7 +25,6 @@ import ru.peef.mobannihilation.game.items.RarityItem;
 import ru.peef.mobannihilation.game.mobs.GameMob;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,8 +32,9 @@ public class GamePlayer {
     private final Player player;
     private final String name;
     public double level;
+    public int gold;
     public List<GameMob> mobs = new ArrayList<>();
-    private final HashMap<Integer, RarityItem> items = new HashMap<>();
+    private final List<RarityItem> items = new ArrayList<>();
     public boolean onArena = false;
     public String lastProg = "";
     public boolean editMode = false;
@@ -41,26 +43,29 @@ public class GamePlayer {
 
     // TODO: Ребитхи
 
-    public GamePlayer(Player player, Double level) {
+    public GamePlayer(Player player, Double level, Integer gold) {
         this.player = player;
         this.name = player.getName();
         this.level = level;
+        this.gold = gold;
 
         updateProgress();
     }
 
-    public GamePlayer(String name, Double level) {
+    public GamePlayer(String name, Double level, Integer gold) {
         this.name = name;
         this.player = Bukkit.getPlayer(this.name);
         this.level = level;
+        this.gold = gold;
 
         updateProgress();
     }
 
-    public GamePlayer(String name, Double level, List<RarityItem> items) {
+    public GamePlayer(String name, Double level, Integer gold, List<RarityItem> items) {
         this.name = name;
         this.player = Bukkit.getPlayer(this.name);
         this.level = level;
+        this.gold = gold;
 
         items.forEach(item -> addItem(item, false));
         updateProgress();
@@ -174,6 +179,7 @@ public class GamePlayer {
     public void leaveArena(boolean sendMessages) {
         if (onArena) {
             player.teleport(GameManager.BASIC_SPAWN);
+            player.setHealth(player.getMaxHealth());
             if (sendMessages) player.sendMessage(ChatColor.AQUA + "Вы вышли с арены!");
             GameManager.PLAYERS_ON_ARENA.removeIf(checkPlayer -> checkPlayer.getName().equals(player.getName()));
             onArena = false;
@@ -188,46 +194,28 @@ public class GamePlayer {
         }
     }
 
-    public void addItem(RarityItem item, boolean chatAnnounce) {
+    public void addItem(RarityItem item, boolean announce) {
         maxItemsCount = MobAnnihilation.getConfiguration().getInt("options.players_rarity_items_count");
         if (items.size() < maxItemsCount) {
-            for (int i = 20; i < 26; i++) {
-                ItemStack slot = player.getInventory().getStorageContents()[i];
-                if (slot == null) {
-                    ItemStack itemStack = new ItemStack(Material.EMERALD, 1);
-                    ItemMeta itemMeta = itemStack.getItemMeta();
-                    if (itemMeta != null) {
-                        List<String> lore = new ArrayList<>();
-                        itemMeta.setDisplayName(ChatColor.RESET + (ChatColor.GOLD + item.getTitle()));
+            ItemStack itemStack = new ItemStack(Material.EMERALD, 1);
+            ItemMeta itemMeta = itemStack.getItemMeta();
+            if (itemMeta != null) {
+                List<String> lore = new ArrayList<>();
+                itemMeta.setDisplayName(ChatColor.RESET + (ChatColor.GOLD + item.getTitle()));
 
-                        lore.add(ChatColor.GREEN + "Редкость: " + item.getRarityString() + ChatColor.GRAY + " (" + item.boostPercent + (item.boostIsPercent ? "%" : "") + ")");
-                        if (item.getChance() != 0) lore.add(ChatColor.GREEN + "Шанс выпадения: " + ChatColor.GOLD + Utils.roundTo(item.getChance(), 2) + "%");
-                        lore.add(ChatColor.GRAY + item.getDescription());
+                lore.add(ChatColor.GREEN + "Редкость: " + item.getRarityString() + ChatColor.GRAY + " (" + item.boostPercent + (item.boostIsPercent ? "%" : "") + ")");
+                if (item.getChance() != 0) lore.add(ChatColor.GREEN + "Шанс выпадения: " + ChatColor.GOLD + Utils.roundTo(item.getChance(), 2) + "%");
+                lore.add(ChatColor.GRAY + item.getDescription());
 
-                        itemMeta.setLore(lore);
-                    }
-
-                    itemStack.setItemMeta(itemMeta);
-                    player.getInventory().setItem(i, itemStack);
-                    item.setItemStack(itemStack);
-                    items.put(i, item);
-
-                    if (item.rarity == 5) {
-                        Bukkit.broadcastMessage(ChatColor.GOLD + getName() + ChatColor.AQUA + " выбил " + ChatColor.RED + "ЛЕГЕНДАРНУЮ" + ChatColor.AQUA + " руну!");
-                    }
-
-                    break;
-                }
+                itemMeta.setLore(lore);
             }
 
-            if (item.boost.equals(RarityItem.Boost.SPEED)) {
-                setPotions();
-            }
+            itemStack.setItemMeta(itemMeta);
+            item.setItemStack(itemStack);
 
-            if (chatAnnounce) {
+            if (announce) {
                 TextComponent message = new TextComponent(ChatColor.AQUA + "Получен предмет: ");
                 TextComponent hoverMessage = new TextComponent(ChatColor.GOLD + "[" + item.getTitle() + "]");
-
                 hoverMessage.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(ChatColor.GOLD + item.getTitle() + "\n" +
                         ChatColor.GREEN + "Редкость: " + item.getRarityString() + ChatColor.GRAY + " (" + item.boostPercent + (item.boostIsPercent ? "%" : "") + ")" + "\n" +
                         ChatColor.AQUA + item.getDescription()
@@ -235,52 +223,26 @@ public class GamePlayer {
                 message.addExtra(hoverMessage);
                 player.spigot().sendMessage(message);
             }
+
+            items.add(item);
+            setPotions();
         } else {
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.RED + "Инвентарь заполнен!"));
         }
     }
 
-    public void assignItems() {
-        player.getInventory().clear();
-
-        for (int i = 21; i < 26; i++) {
-            if (items.containsKey(i)) {
-                RarityItem item = items.get(i);
-                player.getInventory().remove(i);
-
-                ItemStack itemStack = new ItemStack(Material.EMERALD, 1);
-                ItemMeta itemMeta = itemStack.getItemMeta();
-                if (itemMeta != null) {
-                    List<String> lore = new ArrayList<>();
-                    itemMeta.setDisplayName(ChatColor.RESET + (ChatColor.GOLD + item.getTitle()));
-
-                    lore.add(ChatColor.GREEN + "Редкость: " + item.getRarityString() + ChatColor.GRAY + " (" + item.boostPercent + (item.boostIsPercent ? "%" : "") + ")");
-                    if (item.getChance() != 0) lore.add(ChatColor.GREEN + "Шанс выпадения: " + ChatColor.GOLD + Utils.roundTo(item.getChance(), 2) + "%");
-                    lore.add(ChatColor.GRAY + item.getDescription());
-
-                    itemMeta.setLore(lore);
-                }
-
-                itemStack.setItemMeta(itemMeta);
-                player.getInventory().setItem(i, itemStack);
-                item.setItemStack(itemStack);
-            }
-        }
-
-        setSword();
-    }
-
-    public void removeItem(Integer slot) {
-        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.AQUA + "Вы выбросили " + ChatColor.GOLD + "[" + items.get(slot).getTitle() + "]"));
-        items.remove(slot);
+    public void removeItem(RarityItem rarityItem) {
+        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.AQUA + "Вы выбросили " + ChatColor.GOLD + "[" + rarityItem.getTitle() + "]"));
+        items.remove(rarityItem);
+        player.closeInventory();
+        openRuneInventory();
         setPotions();
     }
 
-    public HashMap<Integer, RarityItem> getRarityItems() { return items; }
-    public List<RarityItem> getAllRarityItems() { return new ArrayList<>(items.values()); }
+    public List<RarityItem> getRarityItems() { return items; }
     public List<RarityItem> getRarityItems(RarityItem.Boost boostType) {
         List<RarityItem> rarityItems = new ArrayList<>();
-        items.forEach((slot, item) -> { if (item.boost.equals(boostType)) rarityItems.add(item); });
+        items.forEach(item -> { if (item.boost.equals(boostType)) rarityItems.add(item); });
         return rarityItems;
     }
 
@@ -330,11 +292,55 @@ public class GamePlayer {
         return false;
     }
 
+    public void openRuneInventory() {
+        Inventory inventory = Bukkit.createInventory(null, 9, ChatColor.GOLD + (ChatColor.BOLD + "Ваши Руны"));
+        for (int i = 0; i < items.size(); i++) {
+            inventory.setItem(i, items.get(i).getItemStack());
+        }
+        this.player.openInventory(inventory);
+    }
+
+    public void kill() {
+        player.spigot().respawn();
+        player.teleport(GameManager.BASIC_SPAWN);
+        player.setGameMode(GameMode.ADVENTURE);
+
+        int minProgressReduce = MobAnnihilation.getConfiguration().getInt("options.game_process.death_min_reduce_progress");
+        int maxProgressReduce = MobAnnihilation.getConfiguration().getInt("options.game_process.death_max_reduce_progress");
+
+        int progress = (int) Math.round(minProgressReduce + Math.random() * (maxProgressReduce - minProgressReduce));
+        reduceProgress(progress);
+        leaveArena(false);
+
+        player.sendMessage(String.format(ChatColor.RED + "Вы умерли! Из-за этого вы потеряли: %s%s", ChatColor.GOLD, progress + " опыта"));
+    }
+
+    public void killMob(LivingEntity entity) {
+        float baseProgress = 22;
+        addProgress(baseProgress / getLevel());
+        player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 20, 5), true);
+
+        RarityItem dropItem = RarityItem.getRandom(this);
+        if (dropItem.getChance() <= RarityItem.getRandomPercent(0f, 100f)) {
+            addItem(dropItem, true);
+        }
+
+        gold += (int) (33 + Math.random() * (69 - 33));
+
+        GameMob killedMob = getMob(entity.getUniqueId());
+        if (killedMob != null) {
+            mobs.removeIf(mob -> mob.uniqueId.equals(killedMob.uniqueId));
+            if (!hasAliveMobs()) {
+                Bukkit.getScheduler().runTaskLater(MobAnnihilation.getInstance(), this::spawnMobs, 10L);
+            }
+        }
+    }
+
     public static GamePlayer fromFile(String name) {
         PlayerData playerData = PlayerDataHandler.getPlayerData(name);
 
-        if (playerData != null) return new GamePlayer(name, Math.max(1.0, playerData.level), playerData.rarity_items);
-        else return new GamePlayer(name, 1.0);
+        if (playerData != null) return new GamePlayer(name, Math.max(1.0, playerData.level), Math.max(0, playerData.gold), playerData.rarity_items);
+        else return new GamePlayer(name, 1.0, 0);
     }
     public static GamePlayer fromFile(Player player) { return fromFile(player.getName()); }
 }
