@@ -1,4 +1,4 @@
-package ru.peef.mobannihilation.game.players;
+package ru.peef.mobannihilation.listeners;
 
 import me.clip.placeholderapi.PlaceholderAPI;
 import net.md_5.bungee.api.ChatMessageType;
@@ -6,14 +6,12 @@ import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.*;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitScheduler;
 import ru.peef.mobannihilation.MobAnnihilation;
 import ru.peef.mobannihilation.Utils;
@@ -22,9 +20,9 @@ import ru.peef.mobannihilation.game.items.RarityItem;
 import ru.peef.mobannihilation.game.mobs.GameMob;
 import ru.peef.mobannihilation.game.npcs.NPC;
 import ru.peef.mobannihilation.game.npcs.NPCManager;
-
-import java.util.List;
-import java.util.Map;
+import ru.peef.mobannihilation.game.players.GamePlayer;
+import ru.peef.mobannihilation.game.players.PlayerDataHandler;
+import ru.peef.mobannihilation.game.players.PlayerManager;
 
 public class PlayerListener implements Listener {
     @EventHandler
@@ -112,106 +110,13 @@ public class PlayerListener implements Listener {
         ItemStack item = event.getItemDrop().getItemStack();
 
         if (gamePlayer != null) {
-            for (Map.Entry<Integer, RarityItem> entry : gamePlayer.getRarityItems().entrySet()) {
-                if (item.isSimilar(entry.getValue().getItemStack())) {
-                    gamePlayer.removeItem(entry.getKey());
+            for (RarityItem rarityItem : gamePlayer.getRarityItems()) {
+                if (item.isSimilar(rarityItem.getItemStack())) {
+                    gamePlayer.removeItem(rarityItem);
                     event.getItemDrop().remove();
 
                     event.setCancelled(false);
                     break;
-                }
-            }
-        }
-    }
-
-    @EventHandler
-    public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
-        if (event.getEntityType().equals(EntityType.PLAYER) && event.getDamager().getType().equals(EntityType.PLAYER)) {
-            event.setCancelled(true);
-        } else {
-            if (event.getEntityType().equals(EntityType.VILLAGER)) event.setCancelled(true);
-            if (event.getDamager().getType().equals(EntityType.PLAYER)) {
-                if (!event.getEntityType().equals(EntityType.VILLAGER)) {
-                    Player damager = (Player) event.getDamager();
-                    GamePlayer gDamager = PlayerManager.get(damager);
-
-                    if (gDamager != null) {
-                        if (!gDamager.getRarityItems().isEmpty()) {
-                            double itemBaseDamage = 0;
-                            double damage = event.getFinalDamage();
-                            double damagePercent = damage / 100f;
-
-                            List<RarityItem> damageItems = gDamager.getRarityItems(RarityItem.Boost.DAMAGE);
-
-                            double result = 100.0;
-                            for (RarityItem rarityItem : damageItems) {
-                                result *= (1 + rarityItem.boostPercent / 100);
-                                itemBaseDamage += rarityItem.baseValue;
-                            }
-                            result -= 100;
-
-                            double total = Math.abs(itemBaseDamage + damage) + (damagePercent * result);
-                            event.setDamage(total);
-                        }
-
-                        LivingEntity entity = (LivingEntity) event.getEntity();
-                        if (entity.getHealth() - event.getFinalDamage() <= 0) {
-                            float baseProgress = 22;
-                            gDamager.addProgress(baseProgress / gDamager.getLevel());
-                            damager.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 20, 5), true);
-
-                            RarityItem dropItem = RarityItem.getRandom(gDamager);
-                            if (dropItem.getChance() <= RarityItem.getRandomPercent(0f, 100f)) {
-                                gDamager.addItem(dropItem, true);
-                            }
-
-                            damager.playSound(damager.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, .5f, 1f);
-
-                            GameMob killedMob = gDamager.getMob(entity.getUniqueId());
-//                            Bukkit.getLogger().info("Killed mob (" + killedMob.uniqueId + ") by " + damager.getName() + " is null: " + (killedMob.equals(null)));
-                            if (killedMob != null) {
-                                gDamager.mobs.removeIf(mob -> mob.uniqueId.equals(killedMob.uniqueId));
-                                if (!gDamager.hasAliveMobs()) {
-                                    Bukkit.getScheduler().runTaskLater(MobAnnihilation.getInstance(), gDamager::spawnMobs, 10L);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    @EventHandler(priority = EventPriority.HIGHEST)
-    public void onEntityDamage(EntityDamageEvent event) {
-        if (event.getEntityType().equals(EntityType.PLAYER)) {
-            EntityDamageEvent.DamageCause cause = event.getCause();
-            if (cause.equals(EntityDamageEvent.DamageCause.FALL)) {
-                event.setCancelled(true);
-            } else {
-                GamePlayer gamePlayer = PlayerManager.get((Player) event.getEntity());
-
-                if (gamePlayer != null) {
-                    double scalingFactor = MobAnnihilation.getConfiguration().getDouble("options.mobs.damage_scaling_factor");
-
-                    int playerLevel = gamePlayer.getLevel();
-                    double baseDamage = event.getDamage();
-                    double damage = Utils.roundTo(baseDamage * Math.pow(scalingFactor, playerLevel) + baseDamage * 0.1 * playerLevel, 2);
-
-                    if (!gamePlayer.getRarityItems(RarityItem.Boost.PROTECTION).isEmpty()) {
-                        double damagePercent = damage / 100f;
-
-                        List<RarityItem> protectionItems = gamePlayer.getRarityItems(RarityItem.Boost.PROTECTION);
-
-                        double result = 100.0;
-                        for (RarityItem rarityItem : protectionItems) result *= (1 + rarityItem.boostPercent / 100);
-                        result -= 100;
-                        result /= (gamePlayer.getLevel() / 3.3f);
-
-                        damage -= (damagePercent * result);
-                    }
-
-                    event.setDamage(damage);
                 }
             }
         }
@@ -243,50 +148,12 @@ public class PlayerListener implements Listener {
             });
 
             BukkitScheduler scheduler = Bukkit.getScheduler();
-
-            scheduler.runTaskLater(MobAnnihilation.getInstance(), () -> {
-                player.spigot().respawn();
-                player.setHealth(player.getMaxHealth());
-                player.teleport(GameManager.BASIC_SPAWN);
-                player.setGameMode(GameMode.ADVENTURE);
-
-                int minProgressReduce = MobAnnihilation.getConfiguration().getInt("options.game_process.death_min_reduce_progress");
-                int maxProgressReduce = MobAnnihilation.getConfiguration().getInt("options.game_process.death_max_reduce_progress");
-
-                int progress = (int) Math.round(minProgressReduce + Math.random() * (maxProgressReduce - minProgressReduce));
-                gamePlayer.reduceProgress(progress);
-                gamePlayer.leaveArena(false);
-
-                player.sendMessage(String.format(ChatColor.RED + "Вы умерли! Из-за этого вы потеряли: %s%s", ChatColor.GOLD, progress + " опыта"));
-            }, 1L);
+            scheduler.runTaskLater(MobAnnihilation.getInstance(), gamePlayer::kill, 1L);
         }
     }
 
     @EventHandler
-    public void onEntityCombust(EntityCombustEvent event) {
-        Entity entity = event.getEntity();
-
-        if (entity.getType() == EntityType.ZOMBIE ||
-                entity.getType() == EntityType.SKELETON ||
-                entity.getType() == EntityType.HUSK ||
-                entity.getType() == EntityType.STRAY) {
-
-            event.setCancelled(true);
-        }
-    }
-
-    @EventHandler
-    public void onEntityTarget(EntityTargetEvent event) {
-        Entity entity = event.getEntity();
-
-        GameManager.PLAYERS_ON_ARENA.forEach(gamePlayer -> {
-            if (gamePlayer.hasMob(entity.getUniqueId())) {
-                event.setTarget(gamePlayer.getPlayer());
-            }
-        });
-    }
-
-    @EventHandler public void onPlayerItemHeld(PlayerItemHeldEvent event) {
+    public void onPlayerItemHeld(PlayerItemHeldEvent event) {
         Player player = event.getPlayer();
         GamePlayer gamePlayer = PlayerManager.get(player);
 
@@ -296,7 +163,9 @@ public class PlayerListener implements Listener {
             event.setCancelled(true);
         }
     }
-    @EventHandler public void onPlayerSwapHandItems(PlayerSwapHandItemsEvent event) {
+
+    @EventHandler
+    public void onPlayerSwapHandItems(PlayerSwapHandItemsEvent event) {
         Player player = event.getPlayer();
         GamePlayer gamePlayer = PlayerManager.get(player);
 
@@ -306,7 +175,9 @@ public class PlayerListener implements Listener {
             event.setCancelled(true);
         }
     }
-    @EventHandler public void onInventoryPickupItem(InventoryPickupItemEvent event) {
+
+    @EventHandler
+    public void onInventoryPickupItem(InventoryPickupItemEvent event) {
         Player player = (Player) event.getInventory().getViewers().get(0);
         GamePlayer gamePlayer = PlayerManager.get(player);
 
@@ -318,14 +189,21 @@ public class PlayerListener implements Listener {
     }
 
     @EventHandler
-    public void onInventoryClose(InventoryCloseEvent event) {
-        if (event.getInventory().getType().equals(InventoryType.ANVIL)) {
-            GamePlayer gamePlayer = PlayerManager.get((Player) event.getPlayer());
-            if (gamePlayer != null) gamePlayer.assignItems();
+    public void onPlayerInteract(PlayerInteractEvent event) {
+        Player player = event.getPlayer();
+        GamePlayer gamePlayer = PlayerManager.get(player);
+
+        if ((event.getAction().equals(Action.RIGHT_CLICK_AIR) || event.getAction().equals(Action.RIGHT_CLICK_BLOCK))
+        && player.isSneaking()) {
+            if (gamePlayer != null) {
+                event.setCancelled(true);
+                gamePlayer.openRuneInventory();
+            }
         }
     }
 
-    @EventHandler public void onInventoryClick(InventoryClickEvent event) {
+    @EventHandler
+    public void onInventoryClick(InventoryClickEvent event) {
         Player player = (Player) event.getWhoClicked();
         GamePlayer gamePlayer = PlayerManager.get(player);
 
