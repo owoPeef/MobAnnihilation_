@@ -1,5 +1,7 @@
 package ru.peef.mobannihilation.game.npcs;
 
+import ru.peef.mobannihilation.handlers.NPCDataHandler;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -9,6 +11,8 @@ public class NPCManager {
     public static List<NPC> CHARACTERS = new ArrayList<>();
 
     public static void init() {
+        NPCDataHandler.init();
+
         for (Map.Entry<String, NPC> character : NPCDataHandler.loadAllNPCs().entrySet()) {
             NPC currentNPC = character.getValue();
             currentNPC.setName(character.getKey());

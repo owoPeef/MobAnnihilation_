@@ -5,7 +5,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import ru.peef.mobannihilation.game.players.PlayerData;
-import ru.peef.mobannihilation.game.players.PlayerDataHandler;
+import ru.peef.mobannihilation.handlers.PlayerDataHandler;
 
 import java.util.Map;
 

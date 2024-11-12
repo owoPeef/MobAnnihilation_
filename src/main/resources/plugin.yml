@@ -7,11 +7,14 @@ commands:
   npc:
     description: Команда для управления NPC
     permission: "game.npc"
+  menu:
+    description: Menu commands
+    permission: "game.menu"
   game:
     description: Команда для взаимодействия с игрой
   world:
-    description: Select world
-    permission: "world"
+    description: World interaction
+    permission: "game.world"
 permissions:
   game.add:
     default: op

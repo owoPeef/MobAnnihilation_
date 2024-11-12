@@ -7,7 +7,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import ru.peef.mobannihilation.game.npcs.NPC;
-import ru.peef.mobannihilation.game.npcs.NPCDataHandler;
+import ru.peef.mobannihilation.handlers.NPCDataHandler;
 import ru.peef.mobannihilation.game.npcs.NPCManager;
 import ru.peef.mobannihilation.holograms.Hologram;
 

@@ -23,6 +23,7 @@ import ru.peef.mobannihilation.game.Arena;
 import ru.peef.mobannihilation.game.GameManager;
 import ru.peef.mobannihilation.game.items.RarityItem;
 import ru.peef.mobannihilation.game.mobs.GameMob;
+import ru.peef.mobannihilation.handlers.PlayerDataHandler;
 
 import java.util.ArrayList;
 import java.util.List;

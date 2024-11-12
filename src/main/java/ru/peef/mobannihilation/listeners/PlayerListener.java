@@ -21,7 +21,7 @@ import ru.peef.mobannihilation.game.mobs.GameMob;
 import ru.peef.mobannihilation.game.npcs.NPC;
 import ru.peef.mobannihilation.game.npcs.NPCManager;
 import ru.peef.mobannihilation.game.players.GamePlayer;
-import ru.peef.mobannihilation.game.players.PlayerDataHandler;
+import ru.peef.mobannihilation.handlers.PlayerDataHandler;
 import ru.peef.mobannihilation.game.players.PlayerManager;
 
 public class PlayerListener implements Listener {

@@ -5,11 +5,10 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import ru.peef.mobannihilation.MobAnnihilation;
 import ru.peef.mobannihilation.game.AnvilGUI;
 import ru.peef.mobannihilation.game.items.RarityItem;
 import ru.peef.mobannihilation.game.players.GamePlayer;
-import ru.peef.mobannihilation.game.players.PlayerDataHandler;
+import ru.peef.mobannihilation.handlers.PlayerDataHandler;
 import ru.peef.mobannihilation.game.players.PlayerManager;
 
 public class GameCommand implements CommandExecutor {
