@@ -1,4 +1,4 @@
-package ru.peef.mobannihilation.game.players;
+package ru.peef.mobannihilation.handlers;
 
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
@@ -6,6 +6,8 @@ import org.bukkit.entity.Player;
 import ru.peef.mobannihilation.MobAnnihilation;
 import ru.peef.mobannihilation.game.items.RarityItem;
 import ru.peef.mobannihilation.game.items.RarityItemAdapter;
+import ru.peef.mobannihilation.game.players.GamePlayer;
+import ru.peef.mobannihilation.game.players.PlayerData;
 
 import java.io.File;
 import java.io.FileReader;

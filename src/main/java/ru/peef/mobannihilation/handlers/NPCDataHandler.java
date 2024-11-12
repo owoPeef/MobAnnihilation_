@@ -1,7 +1,8 @@
-package ru.peef.mobannihilation.game.npcs;
+package ru.peef.mobannihilation.handlers;
 
 import com.google.gson.*;
 import ru.peef.mobannihilation.MobAnnihilation;
+import ru.peef.mobannihilation.game.npcs.NPC;
 
 import java.io.File;
 import java.io.FileReader;
