@@ -23,7 +23,7 @@ public class ScoreboardUtils {
 
         objective.getScore(ChatColor.AQUA + "Вы: " + ChatColor.GOLD + gamePlayer.getName()).setScore(10);
         objective.getScore(" ").setScore(9);
-        objective.getScore(ChatColor.AQUA + "Уровень: " + ChatColor.GOLD + gamePlayer.getLevel()).setScore(8);
+        objective.getScore(ChatColor.AQUA + "Уровень: " + ChatColor.GOLD + gamePlayer.getLevel() + ChatColor.AQUA + " (ребитх: " + gamePlayer.getLevelForRebith() + ")").setScore(8);
         objective.getScore(ChatColor.AQUA + "Прогресс: " + ChatColor.GOLD + gamePlayer.getProgress() + "% " + gamePlayer.lastProg).setScore(7);
         objective.getScore(ChatColor.AQUA + "Баланс: " + ChatColor.GOLD + gamePlayer.gold).setScore(6);
         objective.getScore("  ").setScore(5);
