@@ -6,8 +6,6 @@ import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -27,46 +25,52 @@ import ru.peef.mobannihilation.handlers.PlayerDataHandler;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public class GamePlayer {
     private final Player player;
     private final String name;
     public double level;
     public int gold;
-    public List<GameMob> mobs = new ArrayList<>();
+    public int rebithCount;
+    public int mobKilled;
+    // Donate
+    public int X_damageBoost = 2;
     private final List<RarityItem> items = new ArrayList<>();
-    public boolean onArena = false;
+    public boolean onArena = false, isSpectate = false;
     public String lastProg = "";
     public boolean editMode = false;
 
     public int maxItemsCount;
 
-    // TODO: Ребитхи
-
-    public GamePlayer(Player player, Double level, Integer gold) {
+    public GamePlayer(Player player, Double level, Integer mobKilled, Integer gold, Integer rebithCount) {
         this.player = player;
         this.name = player.getName();
         this.level = level;
+        this.mobKilled = mobKilled;
         this.gold = gold;
+        this.rebithCount = rebithCount;
 
         updateProgress();
     }
 
-    public GamePlayer(String name, Double level, Integer gold) {
+    public GamePlayer(String name, Double level, Integer mobKilled, Integer gold, Integer rebithCount) {
         this.name = name;
         this.player = Bukkit.getPlayer(this.name);
         this.level = level;
+        this.mobKilled = mobKilled;
         this.gold = gold;
+        this.rebithCount = rebithCount;
 
         updateProgress();
     }
 
-    public GamePlayer(String name, Double level, Integer gold, List<RarityItem> items) {
+    public GamePlayer(String name, Double level, Integer mobKilled, Integer gold, Integer rebithCount, List<RarityItem> items) {
         this.name = name;
         this.player = Bukkit.getPlayer(this.name);
         this.level = level;
+        this.mobKilled = mobKilled;
         this.gold = gold;
+        this.rebithCount = rebithCount;
 
         items.forEach(item -> addItem(item, false));
         updateProgress();
@@ -76,18 +80,6 @@ public class GamePlayer {
     public Player getPlayer() { return player; }
     public int getLevel() { return (int) Math.floor(level); }
     public int getProgress() { return (int) Math.floor((level - Math.floor(level)) * 100); }
-
-    public String getStatsMessage() {
-        return ChatColor.GREEN + "===============\n"
-                + ChatColor.AQUA + "Игрок " + ChatColor.GOLD + getName() + "\n"
-                + ChatColor.AQUA + "Уровень: " + ChatColor.YELLOW + getLevel() + "\n"
-                + ChatColor.AQUA + "Прогресс: " + ChatColor.YELLOW + getProgress() + "%\n"
-                + ChatColor.AQUA + "Рун Урона: " + ChatColor.YELLOW + getRarityItems(RarityItem.Boost.DAMAGE).size() + " (" + Utils.roundTo(getRarityPercent(RarityItem.Boost.DAMAGE), 1) + "%)" + "\n"
-                + ChatColor.AQUA + "Рун Защиты: " + ChatColor.YELLOW + getRarityItems(RarityItem.Boost.PROTECTION).size() + " (" + Utils.roundTo(getRarityPercent(RarityItem.Boost.PROTECTION), 1) + "%)" + "\n"
-                + ChatColor.AQUA + "Рун Скорости: " + ChatColor.YELLOW + getRarityItems(RarityItem.Boost.SPEED).size() + " (" + Utils.roundTo(getRarityPercent(RarityItem.Boost.SPEED), 1) + ")" + "\n"
-//                + ChatColor.AQUA + "Рун Скорости Атаки: " + ChatColor.YELLOW + getRarityItems(RarityItem.Boost.ATTACK_SPEED).size() + " (" + Utils.roundTo(getRarityPercent(RarityItem.Boost.ATTACK_SPEED), 1) + ")" + "\n"
-                + ChatColor.GREEN + "===============\n";
-    }
 
     public void save() { PlayerDataHandler.savePlayer(this); }
     public void addLevel(int level) { addProgress(level * 100); }
@@ -106,7 +98,13 @@ public class GamePlayer {
 
         lastProg = ChatColor.GREEN + "(+" + (int)prog + "%)";
     }
-    public void reduceProgress(double prog) { level -= prog / 100; updateProgress(); lastProg = ChatColor.RED + "(-" + (int)prog + "%)"; }
+
+    public void reduceProgress(double prog) {
+        level -= prog / 100;
+        level = Math.max(level, 1.0);
+        updateProgress();
+        lastProg = ChatColor.RED + "(-" + (int)prog + "%)";
+    }
 
     public void updateProgress() {
         player.setLevel(getLevel());
@@ -152,15 +150,16 @@ public class GamePlayer {
         ScoreboardUtils.updateScoreboard(this);
     }
 
-    Arena arena = null;
+    public Arena arena = null;
 
     public void joinArena() {
+        if (isSpectate) stopSpectate();
+
         if (!onArena) {
             onArena = true;
+
             player.sendMessage(ChatColor.GREEN + "Вы были телепортированы на арену!");
             player.sendMessage(ChatColor.YELLOW + (ChatColor.BOLD + "ПОМНИТЕ!") + ChatColor.AQUA + " Для выхода из арены: " + ChatColor.GOLD + "/game leave");
-
-            GameManager.PLAYERS_ON_ARENA.add(this);
 
             arena = new Arena(GameManager.ARENA_WORLD,
                     "mainArena",
@@ -169,9 +168,26 @@ public class GamePlayer {
             );
             arena.add(this);
             arena.load(0, 25, 50);
+
+            player.teleport(arena.getPlayerSpawn());
+        } else {
+            player.sendMessage(ChatColor.RED + "Ты уже на арене!");
+        }
+    }
+
+    public void joinArena(Arena arena) {
+        if (isSpectate) stopSpectate();
+
+        if (!onArena) {
+            onArena = true;
+
             player.teleport(arena.getPlayerSpawn());
 
-            spawnMob(EntityType.ZOMBIE);
+            player.sendMessage(ChatColor.GREEN + "Вы были телепортированы на арену!");
+            player.sendMessage(ChatColor.YELLOW + (ChatColor.BOLD + "ПОМНИТЕ!") + ChatColor.AQUA + " Для выхода из арены: " + ChatColor.GOLD + "/game leave");
+
+            this.arena = arena;
+            this.arena.add(this);
         } else {
             player.sendMessage(ChatColor.RED + "Ты уже на арене!");
         }
@@ -179,19 +195,49 @@ public class GamePlayer {
 
     public void leaveArena(boolean sendMessages) {
         if (onArena) {
+            onArena = false;
+
             player.teleport(GameManager.BASIC_SPAWN);
             player.setHealth(player.getMaxHealth());
+
             if (sendMessages) player.sendMessage(ChatColor.AQUA + "Вы вышли с арены!");
-            GameManager.PLAYERS_ON_ARENA.removeIf(checkPlayer -> checkPlayer.getName().equals(player.getName()));
-            onArena = false;
 
             setPotions();
             updateProgress();
 
+            arena.arenaPlayers.remove(this);
             arena.unload();
             arena = null;
         } else if (sendMessages) {
             player.sendMessage(ChatColor.RED + "Ты не находишься на арене!");
+        }
+    }
+
+    public void startSpectate(Arena arena) {
+        if (onArena) leaveArena(false);
+        if (isSpectate) stopSpectate();
+
+        this.arena = arena;
+        this.arena.spectatePlayers.add(this);
+        this.arena.getPlayers().forEach(arenaPlayer -> arenaPlayer.getPlayer().hidePlayer(MobAnnihilation.getInstance(), player));
+
+        player.sendMessage(ChatColor.AQUA + "Тсс... Вы начали наблюдать за Ареной #" + arena.getId());
+        player.teleport(arena.getPlayerSpawn());
+        player.setGameMode(GameMode.SPECTATOR);
+
+        isSpectate = true;
+    }
+
+    public void stopSpectate() {
+        if (isSpectate) {
+            player.teleport(GameManager.BASIC_SPAWN);
+            player.setGameMode(GameMode.ADVENTURE);
+
+            this.arena.spectatePlayers.remove(this);
+            this.arena.getAllPlayers().forEach(arenaPlayer -> arenaPlayer.getPlayer().showPlayer(MobAnnihilation.getInstance(), player));
+            this.arena = null;
+
+            isSpectate = false;
         }
     }
 
@@ -254,44 +300,6 @@ public class GamePlayer {
         }
         return value;
     }
-    public void spawnMobs() {
-        for (int i = 0; i < 3; i++) {
-            EntityType entityType = EntityType.ZOMBIE;
-            double chance = 1 + Math.random() * (10 - 1);
-            if (chance <= 1.2) entityType = EntityType.PIG_ZOMBIE;
-            spawnMob(entityType);
-        }
-    }
-
-    public void spawnMob(EntityType type) {
-        Entity entity = GameManager.ARENA_WORLD.spawnEntity(arena.getMobSpawn(), type);
-        GameMob mob = GameMob.createAndAppend(entity, this);
-        MobAnnihilation.getInstance().getLogger().info(String.format("Spawned mob for %s at %s %s %s", mob.spawnedFor.getName(), entity.getLocation().getX(), entity.getLocation().getY(), entity.getLocation().getZ()));
-    }
-
-    public GameMob getMob(UUID uniqueId) {
-        for (GameMob mob : mobs) {
-            if (mob.uniqueId.equals(uniqueId)) return mob;
-        }
-        return null;
-    }
-
-    public boolean hasAliveMobs() {
-        for (GameMob mob : mobs) {
-//            player.sendMessage(ChatColor.GOLD + (mob.uniqueId + (ChatColor.AQUA + " is dead: ") + mob.livingEntity.isDead()));
-            if (mob.livingEntity != null && !mob.livingEntity.isDead()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public boolean hasMob(UUID uniqueId) {
-        for (GameMob mob : mobs) {
-            if (mob.livingEntity != null && !mob.livingEntity.isDead() && mob.uniqueId.equals(uniqueId)) return true;
-        }
-        return false;
-    }
 
     public void openRuneInventory() {
         Inventory inventory = Bukkit.createInventory(null, 9, ChatColor.GOLD + (ChatColor.BOLD + "Ваши Руны"));
@@ -313,12 +321,16 @@ public class GamePlayer {
         reduceProgress(progress);
         leaveArena(false);
 
+        player.setMaxHealth(20 + getHealth());
+        player.setHealth(player.getMaxHealth());
+
         player.sendMessage(String.format(ChatColor.RED + "Вы умерли! Из-за этого вы потеряли: %s%s", ChatColor.GOLD, progress + " опыта"));
     }
 
     public void killMob(LivingEntity entity) {
         float baseProgress = 22;
-        addProgress(baseProgress / getLevel());
+        addProgress((baseProgress / getLevel()) * (rebithCount * 1.3f));
+        player.setMaxHealth(20 + getHealth());
         player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 20, 5), true);
 
         RarityItem dropItem = RarityItem.getRandom(this);
@@ -326,22 +338,51 @@ public class GamePlayer {
             addItem(dropItem, true);
         }
 
-        gold += (int) (33 + Math.random() * (69 - 33));
+        double GOLD_MIN = 33 * (rebithCount / 1.5f);
+        double GOLD_MAX = 69 * (rebithCount / 1.6f);
+        gold += (int) (GOLD_MIN + Math.random() * (GOLD_MAX - GOLD_MIN));
 
-        GameMob killedMob = getMob(entity.getUniqueId());
+        GameMob killedMob = arena.getMob(entity.getUniqueId());
         if (killedMob != null) {
-            mobs.removeIf(mob -> mob.uniqueId.equals(killedMob.uniqueId));
-            if (!hasAliveMobs()) {
-                Bukkit.getScheduler().runTaskLater(MobAnnihilation.getInstance(), this::spawnMobs, 10L);
+            arena.MOBS.removeIf(mob -> mob.uniqueId.equals(killedMob.uniqueId));
+            if (!arena.hasAliveMobs()) {
+                Bukkit.getScheduler().runTaskLater(MobAnnihilation.getInstance(), arena::spawnMobs, 10L);
             }
         }
+
+        mobKilled++;
     }
 
     public static GamePlayer fromFile(String name) {
         PlayerData playerData = PlayerDataHandler.getPlayerData(name);
 
-        if (playerData != null) return new GamePlayer(name, Math.max(1.0, playerData.level), Math.max(0, playerData.gold), playerData.rarity_items);
-        else return new GamePlayer(name, 1.0, 0);
+        if (playerData != null) return new GamePlayer(name, Math.max(1.0, playerData.level), playerData.mobKilled, Math.max(0, playerData.gold), playerData.rebithCount, playerData.rarity_items);
+        else return new GamePlayer(name, 1.0, 0, 0, 1);
     }
     public static GamePlayer fromFile(Player player) { return fromFile(player.getName()); }
+
+    public double getHealth() {
+        if (getLevel() >= 20) {
+            return (getLevel()-20.0) / 5;
+        }
+        return 0;
+    }
+
+    public int getLevelForRebith() {
+        return (int) (20 * Math.pow(rebithCount, 1.1f));
+    }
+
+    public void rebith() {
+        if (getLevel() >= getLevelForRebith()) {
+            rebithCount++;
+            player.sendMessage(ChatColor.AQUA + "Готово! Для следующего ребитха необходим: " + ChatColor.GOLD + getLevelForRebith() + " ур.");
+
+            gold = 0;
+            level = 1.0;
+        } else {
+            player.sendMessage(ChatColor.RED + "Ваш уровень слишком мал! Для следующего ребитха нужен: " + ChatColor.GOLD + getLevelForRebith() + " ур.");
+        }
+
+        updateProgress();
+    }
 }

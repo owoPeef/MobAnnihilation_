@@ -1,6 +1,9 @@
 package ru.peef.mobannihilation.game;
 
+import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.*;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import ru.peef.mobannihilation.MobAnnihilation;
 import ru.peef.mobannihilation.ScoreboardUtils;
 import ru.peef.mobannihilation.game.players.GamePlayer;
@@ -16,7 +19,9 @@ public class GameManager {
     public static int SHOW_TOP_PLAYERS_COUNT;
     public static int scoreboardUpdateSeconds;
 
-    public static List<GamePlayer> PLAYERS_ON_ARENA = new ArrayList<>();
+    public static List<LivingEntity> SPAWNED_ENTITIES = new ArrayList<>();
+
+    public static List<Arena> ARENA_LIST = new ArrayList<>();
 
     public static void init() {
         BASIC_WORLD = Bukkit.getWorld(MobAnnihilation.getConfiguration().getString("worlds.lobby.world_name"));
@@ -44,6 +49,31 @@ public class GameManager {
             return sortedPlayers;
         } else {
             return new HashMap<>();
+        }
+    }
+
+    public static List<GamePlayer> getArenaPlayers() {
+        List<GamePlayer> players = new ArrayList<>();
+        ARENA_LIST.forEach(arena -> players.addAll(arena.arenaPlayers));
+        return players;
+    }
+
+    public static void playerChat(Player player, String message) {
+        GamePlayer gamePlayer = PlayerManager.get(player);
+
+        if (gamePlayer != null) {
+            if (gamePlayer.arena != null && !gamePlayer.isSpectate) {
+                gamePlayer.arena.sendMessage(PlaceholderAPI.setPlaceholders(
+                        player,
+                        MobAnnihilation.getConfiguration().getString("options.chat.game.arena_format")
+                ).replace("%player_name%", player.getName()).replace("%message%", message).replace('&', ChatColor.COLOR_CHAR));
+            } else {
+                Bukkit.broadcastMessage(PlaceholderAPI.setPlaceholders(player,
+                        MobAnnihilation.getConfiguration().getString("options.chat.game.global_format")).replace("%player_name%", player.getName()).replace("%message%", message).replace('&', ChatColor.COLOR_CHAR));
+            }
+        } else {
+            Bukkit.broadcastMessage(PlaceholderAPI.setPlaceholders(player,
+                    MobAnnihilation.getConfiguration().getString("options.chat.player_format")).replace("%player_name%", player.getName()).replace("%message%", message).replace('&', ChatColor.COLOR_CHAR));
         }
     }
 }

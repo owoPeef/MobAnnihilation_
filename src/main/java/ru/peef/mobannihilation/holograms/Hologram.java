@@ -5,8 +5,11 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
 import ru.peef.mobannihilation.MobAnnihilation;
+import ru.peef.mobannihilation.game.GameManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +30,9 @@ public class Hologram {
     public Hologram(String name, World world, double x, double y, double z, String text) {
         this.name = name;
         Location location = new Location(world, x,  y, z);
-        armorStand = (ArmorStand) world.spawnEntity(location, EntityType.ARMOR_STAND);
+        Entity entity = world.spawnEntity(location, EntityType.ARMOR_STAND);
+        LivingEntity livingEntity = (LivingEntity) entity;
+        armorStand = (ArmorStand) entity;
 
         setText(text);
         if (!text.isEmpty()) armorStand.setCustomNameVisible(true);
@@ -38,6 +43,7 @@ public class Hologram {
 
         MobAnnihilation.getInstance().getLogger().info(String.format("Spawned Hologram at %s %s %s (%s)", x, y, z, name));
 
+        GameManager.SPAWNED_ENTITIES.add(livingEntity);
         HOLOGRAMS.add(this);
     }
 

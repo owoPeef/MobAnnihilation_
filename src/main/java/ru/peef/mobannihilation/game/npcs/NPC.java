@@ -4,7 +4,10 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Villager;
+import ru.peef.mobannihilation.game.GameManager;
+import ru.peef.mobannihilation.handlers.NPCDataHandler;
 import ru.peef.mobannihilation.holograms.Hologram;
 
 import java.util.UUID;
@@ -42,6 +45,7 @@ public class NPC {
         entity = world.spawn(new Location(world, x, y, z, yaw, 0), Villager.class);
         entity.setGravity(false);
         ((Villager) entity).setAI(false);
+        GameManager.SPAWNED_ENTITIES.add((LivingEntity) entity);
         uniqueId = entity.getUniqueId();
 
         hologram = new Hologram(this.name, world, x, y+1.77f, z, hologramText);
