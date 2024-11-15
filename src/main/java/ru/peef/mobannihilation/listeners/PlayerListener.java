@@ -1,6 +1,5 @@
 package ru.peef.mobannihilation.listeners;
 
-import me.clip.placeholderapi.PlaceholderAPI;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.*;
@@ -17,11 +16,9 @@ import ru.peef.mobannihilation.MobAnnihilation;
 import ru.peef.mobannihilation.Utils;
 import ru.peef.mobannihilation.game.GameManager;
 import ru.peef.mobannihilation.game.items.RarityItem;
-import ru.peef.mobannihilation.game.mobs.GameMob;
 import ru.peef.mobannihilation.game.npcs.NPC;
 import ru.peef.mobannihilation.game.npcs.NPCManager;
 import ru.peef.mobannihilation.game.players.GamePlayer;
-import ru.peef.mobannihilation.handlers.PlayerDataHandler;
 import ru.peef.mobannihilation.game.players.PlayerManager;
 
 public class PlayerListener implements Listener {
@@ -33,28 +30,15 @@ public class PlayerListener implements Listener {
 
         player.setGameMode(GameMode.ADVENTURE);
         player.teleport(GameManager.BASIC_SPAWN);
-        player.setHealth(player.getMaxHealth());
         player.getInventory().clear();
 
         String textures_url = MobAnnihilation.getConfiguration().getString("options.resource_pack_url");
         if (!textures_url.isEmpty()) player.setResourcePack(textures_url);
 
-        // Когда игрок только зашел, у него появляются все доступные команды
-        if (!PlayerDataHandler.hasPlayer(player)) {
-            player.sendMessage(
-                    ChatColor.GREEN + "Привет! Я для тебя подготовил небольшой гайд по командам... Вкратце:\n" +
-                    ChatColor.GOLD + "/game info" + ChatColor.AQUA + " - вывести это сообщение\n" +
-                    ChatColor.GOLD + "/game stats" + ChatColor.AQUA + " - получить свою статистику\n" +
-                    ((player.isOp() || player.hasPermission("game.stats.other")) ? ChatColor.GOLD + "/game stats <ник>" + ChatColor.AQUA + " - получить статистику игрока\n" : "") +
-                    ChatColor.GOLD + "/game join" + ChatColor.AQUA + " - войти на арену\n" +
-                    ChatColor.GOLD + "/game leave" + ChatColor.AQUA + " - выйти с арены\n" +
-                    ((player.isOp() || player.hasPermission("game.add")) ? ChatColor.GOLD + "/game add_level <число>" + ChatColor.AQUA + " - добавить <число> уровней\n" + ChatColor.GOLD + "/game add_progress <число>" + ChatColor.AQUA + " - добавить <число>% прогресса (от 1 до 100)" : "")
-            );
-        }
-
         GamePlayer gamePlayer = GamePlayer.fromFile(player);
-
         gamePlayer.joinServer();
+        player.setMaxHealth(20 + gamePlayer.getHealth());
+        player.setHealth(player.getMaxHealth());
     }
 
     @EventHandler
@@ -67,13 +51,22 @@ public class PlayerListener implements Listener {
         if (gamePlayer != null) {
             gamePlayer.save();
 
-            for (GameMob mob : gamePlayer.mobs) {
-                if (mob != null && mob.livingEntity != null && !mob.livingEntity.isDead() && mob.spawnedFor.getName().equals(gamePlayer.getName())) {
-                    mob.livingEntity.remove();
-                }
-            }
+            if (gamePlayer.onArena) gamePlayer.leaveArena(false);
+            if (gamePlayer.isSpectate) gamePlayer.stopSpectate();
 
             PlayerManager.PLAYERS.removeIf(checkPlayer -> checkPlayer.getPlayer().getName().equals(gamePlayer.getPlayer().getName()));
+        }
+    }
+
+    @EventHandler
+    public void onPlayerDeath(PlayerDeathEvent event) {
+        event.setDeathMessage("");
+        Player player = event.getEntity();
+        GamePlayer gamePlayer = PlayerManager.get(player);
+
+        if (gamePlayer != null) {
+            BukkitScheduler scheduler = Bukkit.getScheduler();
+            scheduler.runTaskLater(MobAnnihilation.getInstance(), gamePlayer::kill, 1L);
         }
     }
 
@@ -124,31 +117,17 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onPlayerChat(AsyncPlayerChatEvent event) {
-        Player player = event.getPlayer();
-        GamePlayer gamePlayer = PlayerManager.get(player);
-
-        if (gamePlayer != null) {
-            event.setFormat(PlaceholderAPI.setPlaceholders(player, MobAnnihilation.getConfiguration().getString("options.chat.gamePlayer_format")).replace('&', ChatColor.COLOR_CHAR));
-        } else {
-            event.setFormat(PlaceholderAPI.setPlaceholders(player, MobAnnihilation.getConfiguration().getString("options.chat.player_format")).replace('&', ChatColor.COLOR_CHAR));
-        }
+        GameManager.playerChat(event.getPlayer(), event.getMessage());
+        event.setCancelled(true);
     }
 
     @EventHandler
-    public void onPlayerDeath(PlayerDeathEvent event) {
-        event.setDeathMessage("");
-        Player player = event.getEntity();
+    public void onPlayerMove(PlayerMoveEvent event) {
+        Player player = event.getPlayer();
         GamePlayer gamePlayer = PlayerManager.get(player);
 
-        if (gamePlayer != null) {
-            gamePlayer.mobs.forEach(mob -> {
-                if (mob != null && mob.livingEntity != null) {
-                    mob.livingEntity.remove();
-                }
-            });
-
-            BukkitScheduler scheduler = Bukkit.getScheduler();
-            scheduler.runTaskLater(MobAnnihilation.getInstance(), gamePlayer::kill, 1L);
+        if (gamePlayer != null && gamePlayer.arena != null) {
+            gamePlayer.arena.checkAll();
         }
     }
 
