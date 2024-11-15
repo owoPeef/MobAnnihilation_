@@ -2,28 +2,27 @@ package ru.peef.mobannihilation;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import ru.peef.mobannihilation.commands.GameCommand;
-import ru.peef.mobannihilation.commands.NPCCommand;
-import ru.peef.mobannihilation.commands.WorldCommand;
+import ru.peef.mobannihilation.commands.*;
 import ru.peef.mobannihilation.game.AnvilGUI;
 import ru.peef.mobannihilation.game.GameExpansion;
 import ru.peef.mobannihilation.game.GameManager;
 import ru.peef.mobannihilation.game.npcs.NPC;
-import ru.peef.mobannihilation.game.npcs.NPCDataHandler;
 import ru.peef.mobannihilation.game.npcs.NPCManager;
 import ru.peef.mobannihilation.game.players.GamePlayer;
-import ru.peef.mobannihilation.game.players.PlayerDataHandler;
+import ru.peef.mobannihilation.handlers.PlayerDataHandler;
 import ru.peef.mobannihilation.listeners.EntityListener;
+import ru.peef.mobannihilation.listeners.InventoryListener;
 import ru.peef.mobannihilation.listeners.PlayerListener;
 import ru.peef.mobannihilation.game.players.PlayerManager;
 import ru.peef.mobannihilation.holograms.Hologram;
 import ru.peef.mobannihilation.listeners.WorldListener;
+import ru.peef.mobannihilation.menus.MenuManager;
 
 import java.io.File;
 
@@ -43,8 +42,8 @@ public final class MobAnnihilation extends JavaPlugin {
         }
 
         GameManager.init();
+        MenuManager.init();
         PlayerDataHandler.init();
-        NPCDataHandler.init();
 
         NPCManager.init();
 
@@ -53,10 +52,13 @@ public final class MobAnnihilation extends JavaPlugin {
             new Hologram("top" + (i+1), GameManager.BASIC_WORLD, 5.5, 20 - (i * 0.3), 0.5, "%mobannihilation_top" + (i+1) + "%");
         }
 
+        getCommand("spectate").setExecutor(new SpectateCommand());
         getCommand("game").setExecutor(new GameCommand());
+        getCommand("menu").setExecutor(new MenuCommand());
         getCommand("npc").setExecutor(new NPCCommand());
         getCommand("world").setExecutor(new WorldCommand());
         getServer().getPluginManager().registerEvents(new PlayerListener(), this);
+        getServer().getPluginManager().registerEvents(new InventoryListener(), this);
         getServer().getPluginManager().registerEvents(new EntityListener(), this);
         getServer().getPluginManager().registerEvents(new WorldListener(), this);
         getServer().getPluginManager().registerEvents(new AnvilGUI(), this);
@@ -66,6 +68,9 @@ public final class MobAnnihilation extends JavaPlugin {
     public void onDisable() {
         PlayerManager.PLAYERS.forEach(GamePlayer::save);
         NPCManager.CHARACTERS.forEach(NPC::despawn);
+
+        for (World world : Bukkit.getWorlds()) world.getEntities().clear();
+        GameManager.SPAWNED_ENTITIES.forEach(LivingEntity::remove);
     }
 
     private void createConfig() {
