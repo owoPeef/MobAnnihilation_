@@ -1,15 +1,35 @@
 options:
   scoreboard_update_seconds: 15
+  arena_start_seconds: 5
   players_top_count: 5
   players_rarity_items_count: 5
   resource_pack_url: "https://download.mc-packs.net/pack/5cd071892b9ec3895aba3a3b12bef868300c53c5.zip"
   chat:
-    gamePlayer_format: "&b[%mobannihilation_level%✫] &6%s &a>> %s"
-    player_format: "&6%s &a>> %s"
+    game:
+      arena_format: "&c[АРЕНА] &b[%mobannihilation_level%✫] &6%player_name% &a>> %message%"
+      global_format: "&b[%mobannihilation_level%✫] &6%player_name% &a>> %message%"
+    player_format: "&6%player_name% &a>> %message%"
   game_process:
     death_min_reduce_progress: 9
     death_max_reduce_progress: 27
     damage_scaling_factor: 1.03
+mobs:
+  zombie:
+    can_spawn: true
+    chance: 76.0
+    count: 2
+  spider:
+    can_spawn: true
+    chance: 11.0
+    count: 1
+  pig_zombie:
+    can_spawn: true
+    chance: 5.0
+    count: 1
+  silverfish:
+    can_spawn: true
+    chance: 9.0
+    count: 5
 worlds:
   lobby:
     world_name: "lobby"

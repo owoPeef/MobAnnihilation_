@@ -9,9 +9,12 @@ commands:
     permission: "game.npc"
   menu:
     description: Menu commands
-    permission: "game.menu"
   game:
     description: Команда для взаимодействия с игрой
+  spectate:
+    description: Команда для наблюдения
+    permission: "game.spectate"
+    aliases: [s, spec]
   world:
     description: World interaction
     permission: "game.world"
