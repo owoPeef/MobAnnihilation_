@@ -6,6 +6,7 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class MenuItem {
     public int slot;
@@ -35,9 +36,10 @@ public class MenuItem {
     }
 
     public String getTitle() { return title.replace('&', ChatColor.COLOR_CHAR); }
+
     public List<String> getLore() {
-        List<String> l = new ArrayList<>();
-        lore.forEach(loreS -> l.add(loreS.replace('&', ChatColor.COLOR_CHAR)));
-        return l;
+        return lore.stream()
+                .map(loreS -> loreS.replace('&', ChatColor.COLOR_CHAR))
+                .collect(Collectors.toList());
     }
 }

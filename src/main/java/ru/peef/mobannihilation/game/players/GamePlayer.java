@@ -79,7 +79,7 @@ public class GamePlayer {
     public String getName() { return player == null ? name : player.getName(); }
     public Player getPlayer() { return player; }
     public int getLevel() { return (int) Math.floor(level); }
-    public int getRebithLevel() { return (int) (Math.floor(level) * rebithCount); }
+    public int getRebithLevel() { return getLevel() * rebithCount; }
     public int getProgress() { return (int) Math.floor((level - Math.floor(level)) * 100); }
 
     public void save() { PlayerDataHandler.savePlayer(this); }
@@ -97,6 +97,13 @@ public class GamePlayer {
 
         updateProgress();
 
+        lastProg = ChatColor.GREEN + "(+" + (int)prog + "%)";
+    }
+
+    public void setLevel(int level) { setProgress(level * 100); }
+    public void setProgress(double prog) {
+        level -= prog / 100;
+        updateProgress();
         lastProg = ChatColor.GREEN + "(+" + (int)prog + "%)";
     }
 
@@ -206,7 +213,7 @@ public class GamePlayer {
             setPotions();
             updateProgress();
 
-            arena.arenaPlayers.remove(this);
+            arena.getPlayers().remove(this);
             arena.unload();
             arena = null;
         } else if (sendMessages) {
@@ -219,7 +226,7 @@ public class GamePlayer {
         if (isSpectate) stopSpectate();
 
         this.arena = arena;
-        this.arena.spectatePlayers.add(this);
+        this.arena.getSpectators().add(this);
         this.arena.getPlayers().forEach(arenaPlayer -> arenaPlayer.getPlayer().hidePlayer(MobAnnihilation.getInstance(), player));
 
         player.sendMessage(ChatColor.AQUA + "Тсс... Вы начали наблюдать за Ареной #" + arena.getId());
@@ -234,7 +241,7 @@ public class GamePlayer {
             player.teleport(GameManager.BASIC_SPAWN);
             player.setGameMode(GameMode.ADVENTURE);
 
-            this.arena.spectatePlayers.remove(this);
+            this.arena.getSpectators().remove(this);
             this.arena.getAllPlayers().forEach(arenaPlayer -> arenaPlayer.getPlayer().showPlayer(MobAnnihilation.getInstance(), player));
             this.arena = null;
 

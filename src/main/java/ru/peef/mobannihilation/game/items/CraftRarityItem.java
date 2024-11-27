@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+// TODO
 public class CraftRarityItem {
     int mergeCount = 0;
     public List<RarityItem> items;

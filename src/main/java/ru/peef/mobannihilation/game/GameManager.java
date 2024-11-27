@@ -12,6 +12,7 @@ import ru.peef.mobannihilation.handlers.PlayerDataHandler;
 import ru.peef.mobannihilation.game.players.PlayerManager;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class GameManager {
     public static World BASIC_WORLD, ARENA_WORLD;
@@ -37,25 +38,22 @@ public class GameManager {
     }
 
     public static Map<String, PlayerData> getTopByLevel() {
-        Map<String, PlayerData> players = PlayerDataHandler.loadPlayers();
-        if (!players.isEmpty()) {
-            List<Map.Entry<String, PlayerData>> entries = new ArrayList<>(players.entrySet());
-            entries.sort((entry1, entry2) -> Double.compare(entry2.getValue().level, entry1.getValue().level));
-            Map<String, PlayerData> sortedPlayers = new LinkedHashMap<>();
-            for (Map.Entry<String, PlayerData> entry : entries) {
-                sortedPlayers.put(entry.getKey(), entry.getValue());
-            }
-
-            return sortedPlayers;
-        } else {
-            return new HashMap<>();
-        }
+        return PlayerDataHandler.loadPlayers()
+                .entrySet()
+                .stream()
+                .sorted((entry1, entry2) -> Double.compare(entry2.getValue().level, entry1.getValue().level))
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (e1, e2) -> e1,
+                        LinkedHashMap::new
+                ));
     }
 
     public static List<GamePlayer> getArenaPlayers() {
-        List<GamePlayer> players = new ArrayList<>();
-        ARENA_LIST.forEach(arena -> players.addAll(arena.arenaPlayers));
-        return players;
+        return ARENA_LIST.stream()
+                .flatMap(arena -> arena.getPlayers().stream())
+                .collect(Collectors.toList());
     }
 
     public static void playerChat(Player player, String message) {

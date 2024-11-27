@@ -21,4 +21,11 @@ public class MenuManager {
 
         MobAnnihilation.getInstance().getLogger().info(("&aLoaded &6" + LOADED_MENUS.size() + "&a menus!").replace('&', ChatColor.COLOR_CHAR));
     }
+
+    public static Menu getMenuByTitle(String title) {
+        return LOADED_MENUS.stream()
+                .filter(menu -> menu.getTitle().equals(title))
+                .findFirst()
+                .orElse(null);
+    }
 }

@@ -9,11 +9,9 @@ public class PlayerManager {
     public static List<GamePlayer> PLAYERS = new ArrayList<>();
 
     public static GamePlayer get(Player player) {
-        for (GamePlayer checkPlayer : PLAYERS)
-            if (checkPlayer.getPlayer().equals(player)) {
-                return checkPlayer;
-            }
-
-        return null;
+        return PLAYERS.stream()
+                .filter((pl) -> pl.getPlayer().getName().equals(player.getName()))
+                .findAny()
+                .orElse(null);
     }
 }

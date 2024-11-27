@@ -18,78 +18,52 @@ import ru.peef.mobannihilation.game.players.PlayerManager;
 import java.util.List;
 
 public class EntityListener implements Listener {
+
     @EventHandler
     public void onPlayerDamagePlayerOrVillager(EntityDamageByEntityEvent event) {
-        if (event.getDamager().getType().equals(EntityType.PLAYER) && (event.getEntityType().equals(EntityType.VILLAGER) || event.getEntityType().equals(EntityType.PLAYER))) event.setCancelled(true);
+        if (isPlayer(event.getDamager()) && isVillagerOrPlayer(event.getEntity())) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler
     public void onPlayerDamageEntity(EntityDamageByEntityEvent event) {
-        if (event.getDamager().getType().equals(EntityType.PLAYER) && !event.getEntityType().equals(EntityType.VILLAGER)) {
-            Player damager = (Player) event.getDamager();
-            GamePlayer gDamager = PlayerManager.get(damager);
-
-            if (gDamager != null) {
-                if (!gDamager.getRarityItems().isEmpty()) {
-                    double itemBaseDamage = 0;
-                    double damage = event.getFinalDamage();
-                    double damagePercent = damage / 100f;
-
-                    List<RarityItem> damageItems = gDamager.getRarityItems(RarityItem.Boost.DAMAGE);
-
-                    double result = 100.0;
-                    for (RarityItem rarityItem : damageItems) {
-                        result *= (1 + rarityItem.boostPercent / 100);
-                        itemBaseDamage += rarityItem.baseValue;
-                    }
-                    result -= 100;
-
-                    double total = Math.abs(itemBaseDamage + damage) + (damagePercent * result) * (Math.pow(gDamager.rebithCount, 1.8f) * gDamager.X_damageBoost);
-                    event.setDamage(total);
-                }
-
-                LivingEntity entity = (LivingEntity) event.getEntity();
-                if (entity.getHealth() - event.getFinalDamage() <= 0) gDamager.killMob(entity);
-            }
+        if (!isPlayer(event.getDamager()) || isVillager(event.getEntity())) {
+            return;
         }
+
+        Player damager = (Player) event.getDamager();
+        GamePlayer gDamager = PlayerManager.get(damager);
+        if (gDamager == null) {
+            return;
+        }
+
+        double totalDamage = calculateDamageWithItems(event.getFinalDamage(), gDamager);
+        event.setDamage(totalDamage);
+
+        handleEntityDeath((LivingEntity) event.getEntity(), gDamager, event.getFinalDamage());
     }
 
     @EventHandler
     public void onEntityDamagePlayer(EntityDamageByEntityEvent event) {
-        if (event.getEntityType().equals(EntityType.PLAYER)) {
-            GamePlayer gamePlayer = PlayerManager.get((Player) event.getEntity());
-
-            if (gamePlayer != null) {
-                double scalingFactor = MobAnnihilation.getConfiguration().getDouble("options.mobs.damage_scaling_factor");
-
-                double entityMaxHealth = ((LivingEntity) event.getDamager()).getMaxHealth();
-                double entityHealthPercent = entityMaxHealth / 100.0;
-
-                double baseDamage = event.getDamage();
-                double damage = Utils.roundTo(baseDamage * Math.pow(scalingFactor, entityHealthPercent * 10) + baseDamage * 0.1 * (entityHealthPercent * 10), 2);
-
-                if (!gamePlayer.getRarityItems(RarityItem.Boost.PROTECTION).isEmpty()) {
-                    double damagePercent = damage / 100f;
-
-                    List<RarityItem> protectionItems = gamePlayer.getRarityItems(RarityItem.Boost.PROTECTION);
-
-                    double result = 100.0;
-                    for (RarityItem rarityItem : protectionItems) result *= (1 + rarityItem.boostPercent / 100);
-                    result -= 100;
-                    result /= (gamePlayer.getLevel() / 3.3f);
-
-                    damage -= (damagePercent * result);
-                }
-
-                event.setDamage(damage);
-            }
+        if (!isPlayer(event.getEntity())) {
+            return;
         }
+
+        GamePlayer gamePlayer = PlayerManager.get((Player) event.getEntity());
+        if (gamePlayer == null) {
+            return;
+        }
+
+        double damage = calculateMobDamage(event, gamePlayer);
+        event.setDamage(damage);
     }
 
     @EventHandler
     public void onEntityDamage(EntityDamageEvent event) {
-        if (event.getEntityType().equals(EntityType.PLAYER) && event.getCause().equals(EntityDamageEvent.DamageCause.FALL))
+        if (isPlayer(event.getEntity()) && event.getCause().equals(EntityDamageEvent.DamageCause.FALL)) {
             event.setCancelled(true);
+        }
     }
 
     @EventHandler
@@ -103,5 +77,69 @@ public class EntityListener implements Listener {
 
             event.setCancelled(true);
         }
+    }
+
+    private boolean isPlayer(Entity entity) {
+        return entity.getType().equals(EntityType.PLAYER);
+    }
+
+    private boolean isVillager(Entity entity) {
+        return entity.getType().equals(EntityType.VILLAGER);
+    }
+
+    private boolean isVillagerOrPlayer(Entity entity) {
+        return isPlayer(entity) || isVillager(entity);
+    }
+
+    private double calculateDamageWithItems(double baseDamage, GamePlayer gDamager) {
+        List<RarityItem> damageItems = gDamager.getRarityItems(RarityItem.Boost.DAMAGE);
+        if (damageItems.isEmpty()) {
+            return baseDamage;
+        }
+
+        double itemBaseDamage = damageItems.stream()
+                .mapToDouble(item -> item.baseValue)
+                .sum();
+
+        double boostMultiplier = damageItems.stream()
+                .mapToDouble(item -> 1 + item.boostPercent / 100)
+                .reduce(1, (a, b) -> a * b);
+
+        double damagePercent = baseDamage / 100f;
+        double rebirthBoost = Math.pow(gDamager.rebithCount, 1.8) * gDamager.X_damageBoost;
+
+        return Math.abs(itemBaseDamage + baseDamage) + (damagePercent * (boostMultiplier - 1) * rebirthBoost);
+    }
+
+    private void handleEntityDeath(LivingEntity entity, GamePlayer gDamager, double finalDamage) {
+        if (entity.getHealth() - finalDamage <= 0) {
+            gDamager.killMob(entity);
+        }
+    }
+
+    private double calculateMobDamage(EntityDamageByEntityEvent event, GamePlayer gamePlayer) {
+        double scalingFactor = MobAnnihilation.getConfiguration().getDouble("options.mobs.damage_scaling_factor");
+        LivingEntity damager = (LivingEntity) event.getDamager();
+
+        double entityHealthPercent = damager.getMaxHealth() / 100.0;
+        double baseDamage = event.getDamage();
+        double damage = Utils.roundTo(
+                baseDamage * Math.pow(scalingFactor, entityHealthPercent * 10) +
+                        baseDamage * 0.1 * (entityHealthPercent * 10), 2
+        );
+
+        List<RarityItem> protectionItems = gamePlayer.getRarityItems(RarityItem.Boost.PROTECTION);
+        if (!protectionItems.isEmpty()) {
+            double damagePercent = damage / 100f;
+
+            double protectionBoost = protectionItems.stream()
+                    .mapToDouble(item -> 1 + item.boostPercent / 100)
+                    .reduce(1, (a, b) -> a * b) - 1;
+
+            protectionBoost /= (gamePlayer.getLevel() / 3.3f);
+            damage -= (damagePercent * protectionBoost);
+        }
+
+        return damage;
     }
 }

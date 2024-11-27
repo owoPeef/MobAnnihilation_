@@ -32,13 +32,13 @@ public class SelectMenu extends Menu {
                         Arrays.asList(
                                 "&eСтатус: " + arena.getState(),
                                 " ",
-                                "&bИгроков: &6" + arena.arenaPlayers.size(),
+                                "&bИгроков: &6" + arena.getPlayers().size(),
                                 "&bСр. уровень: &6" + arena.getLevel(),
                                 "",
                                 "&aНажмите, чтобы присоединиться"
                         ),
                         Material.STONE,
-                        Math.max(1, arena.spectatePlayers.size()));
+                        Math.max(1, arena.getSpectators().size()));
 
                 ItemStack itemStack = new ItemStack(menuItem.material, menuItem.count);
                 ItemMeta itemMeta = itemStack.getItemMeta();

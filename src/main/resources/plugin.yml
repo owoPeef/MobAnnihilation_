@@ -4,22 +4,32 @@ main: ru.peef.mobannihilation.MobAnnihilation
 authors: [HimBanny, owoPeef]
 depend: [PlaceholderAPI, WorldEdit]
 commands:
-  npc:
-    description: Команда для управления NPC
-    permission: "game.npc"
   menu:
     description: Menu commands
   game:
     description: Команда для взаимодействия с игрой
   spectate:
     description: Команда для наблюдения
-    permission: "game.spectate"
+    permission: "game.moderation.spectate"
     aliases: [s, spec]
+  npc:
+    description: Команда для управления NPC
+    permission: "game.admin.npc"
   world:
-    description: World interaction
-    permission: "game.world"
+    description: Work with worlds
+    permission: "game.admin.world"
 permissions:
-  game.add:
+  game.admin.npc:
     default: op
-  game.stats.other:
+  game.admin.world:
+    default: op
+  game.admin.add_level:
+      default: op
+  game.admin.add_progress:
+      default: op
+  game.admin.set_level:
+      default: op
+  game.admin.set_progress:
+      default: op
+  game.moderation.spectate:
     default: op

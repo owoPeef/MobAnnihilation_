@@ -16,12 +16,6 @@ public class RarityItem {
     public Boost boost;
     public float boostPercent;
     public final transient boolean boostIsPercent;
-    // 1 - обычный
-    // 2 - необычный
-    // 3 - редкий
-    // 4 - очень редкий
-    // 5 - легендарный
-    public int rarity = -1;
 
     public enum Boost {
         DAMAGE,
@@ -116,20 +110,6 @@ public class RarityItem {
         return "???";
     }
 
-    public String getRarityString() {
-        if (rarity == 5) {
-            return ChatColor.RED + "ЛЕГЕНДАРНАЯ";
-        } else if (rarity == 4) {
-            return ChatColor.LIGHT_PURPLE + "ОЧЕНЬ РЕДКАЯ";
-        } else if (rarity == 3) {
-            return ChatColor.GREEN + "РЕДКАЯ";
-        } else if (rarity == 2) {
-            return ChatColor.DARK_GREEN + "НЕОБЫЧНАЯ";
-        } else {
-            return ChatColor.WHITE + "ОБЫЧНАЯ";
-        }
-    }
-
     public ItemStack getItemStack() { return this.itemStack; }
     public void setItemStack(ItemStack itemStack) { this.itemStack = itemStack; }
 
@@ -147,9 +127,10 @@ public class RarityItem {
         return new RarityItem("Руна {BOOST_NAME}", "Когда находится в инвентаре, дает +{BOOST_PERCENT} к {BOOST_NAME}", gamePlayer.getLevel() / 1.8f, boost);
     }
 
+    /* TODO
     public static CraftRarityItem combineItems(RarityItem... items) {
         return new CraftRarityItem(items);
-    }
+    }*/
 
     public static RarityItem create(String title, String description, float baseValue, String boostType, float boostPercent) {
         Boost boost;

@@ -4,11 +4,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.*;
-import ru.peef.mobannihilation.game.BossFightManager;
 import ru.peef.mobannihilation.game.items.RarityItem;
 import ru.peef.mobannihilation.game.players.GamePlayer;
-
-import java.util.concurrent.TimeUnit;
 
 public class ScoreboardUtils {
     private static Scoreboard getScoreboard(Player player) {

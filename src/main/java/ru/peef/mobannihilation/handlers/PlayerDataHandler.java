@@ -54,8 +54,7 @@ public class PlayerDataHandler {
 
     public static boolean hasPlayer(Player player) { return hasPlayer(player.getName()); }
     public static boolean hasPlayer(String name) {
-        Map<String, PlayerData> players = loadPlayers();
-        return players != null && players.containsKey(name);
+        return loadPlayers().containsKey(name);
     }
 
     public static Map<String, PlayerData> loadPlayers() {

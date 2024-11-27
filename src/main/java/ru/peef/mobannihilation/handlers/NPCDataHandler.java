@@ -44,8 +44,7 @@ public class NPCDataHandler {
     public static void updateNPC(NPC npc) { saveNPC(npc); }
 
     public static NPC loadNPC(String name) {
-        Map<String, NPC> npcData = loadAllNPCs();
-        return npcData.get(name);
+        return loadAllNPCs().get(name);
     }
 
     public static void deleteNPC(String name) {

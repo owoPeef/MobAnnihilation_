@@ -8,7 +8,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import ru.peef.mobannihilation.game.players.GamePlayer;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class Menu {
     public String name;
@@ -24,39 +23,43 @@ public class Menu {
     }
 
     public String getName() { return name.toLowerCase(); }
+
     public String getTitle() { return title.replace('&', ChatColor.COLOR_CHAR); }
+
     public Inventory getInventory(GamePlayer gamePlayer) {
         Inventory inventory = Bukkit.createInventory(null, size, title);
-        for (int i = 0; i < size; i++) {
-            for (MenuItem item : executeItems) {
-                if (item.slot == i) {
-                    ItemStack itemStack = new ItemStack(item.material, item.count);
-                    ItemMeta itemMeta = itemStack.getItemMeta();
 
-                    if (itemMeta != null) {
-                        itemMeta.setDisplayName(item.getTitle());
-                        itemMeta.setLore(item.getLore());
-                    }
-
-                    itemStack.setItemMeta(itemMeta);
-                    item.itemStack = itemStack;
-
-                    inventory.setItem(i, itemStack);
-                }
+        executeItems.forEach(item -> {
+            if (item.slot < size) {
+                ItemStack itemStack = createItemStack(item);
+                inventory.setItem(item.slot, itemStack);
             }
-        }
+        });
 
         return inventory;
     }
 
+    private ItemStack createItemStack(MenuItem item) {
+        ItemStack itemStack = new ItemStack(item.material, item.count);
+        ItemMeta itemMeta = itemStack.getItemMeta();
+
+        if (itemMeta != null) {
+            itemMeta.setDisplayName(item.getTitle());
+            itemMeta.setLore(item.getLore());
+            itemStack.setItemMeta(itemMeta);
+        }
+
+        return itemStack;
+    }
+
     public void addItem(MenuItem item) { executeItems.add(item); }
+
     public void addItems(List<MenuItem> items) { executeItems.addAll(items); }
 
     public static Menu find(String openMenu) {
-        AtomicReference<Menu> findMenu = new AtomicReference<>();
-        MenuManager.LOADED_MENUS.forEach(menu -> {
-            if (menu.getName().equals(openMenu)) findMenu.set(menu);
-        });
-        return findMenu.get();
+        return MenuManager.LOADED_MENUS.stream()
+                .filter(menu -> menu.getName().equals(openMenu))
+                .findFirst()
+                .orElse(null);
     }
 }

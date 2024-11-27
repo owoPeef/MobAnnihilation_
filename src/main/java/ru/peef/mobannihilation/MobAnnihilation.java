@@ -21,7 +21,6 @@ import ru.peef.mobannihilation.listeners.InventoryListener;
 import ru.peef.mobannihilation.listeners.PlayerListener;
 import ru.peef.mobannihilation.game.players.PlayerManager;
 import ru.peef.mobannihilation.holograms.Hologram;
-import ru.peef.mobannihilation.listeners.WorldListener;
 import ru.peef.mobannihilation.menus.MenuManager;
 
 import java.io.File;
@@ -60,7 +59,6 @@ public final class MobAnnihilation extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerListener(), this);
         getServer().getPluginManager().registerEvents(new InventoryListener(), this);
         getServer().getPluginManager().registerEvents(new EntityListener(), this);
-        getServer().getPluginManager().registerEvents(new WorldListener(), this);
         getServer().getPluginManager().registerEvents(new AnvilGUI(), this);
     }
 
