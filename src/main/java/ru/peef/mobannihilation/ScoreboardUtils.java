@@ -4,8 +4,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.*;
+import ru.peef.mobannihilation.game.BossFightManager;
 import ru.peef.mobannihilation.game.items.RarityItem;
 import ru.peef.mobannihilation.game.players.GamePlayer;
+
+import java.util.concurrent.TimeUnit;
 
 public class ScoreboardUtils {
     private static Scoreboard getScoreboard(Player player) {
@@ -21,9 +24,10 @@ public class ScoreboardUtils {
         Scoreboard scoreboard = getScoreboard(gamePlayer.getPlayer());
         Objective objective = scoreboard.getObjective(ChatColor.GREEN + (ChatColor.BOLD + "Annihilation"));
 
-        objective.getScore(ChatColor.AQUA + "Вы: " + ChatColor.GOLD + gamePlayer.getName()).setScore(10);
-        objective.getScore(" ").setScore(9);
-        objective.getScore(ChatColor.AQUA + "Уровень: " + ChatColor.GOLD + gamePlayer.getLevel() + ChatColor.AQUA + " (ребитх: " + gamePlayer.getLevelForRebith() + ")").setScore(8);
+        objective.getScore(ChatColor.AQUA + "Вы: " + ChatColor.GOLD + gamePlayer.getName()).setScore(11);
+        objective.getScore(" ").setScore(10);
+        objective.getScore(ChatColor.AQUA + "Уровень: " + ChatColor.GOLD + gamePlayer.getLevel() + ChatColor.AQUA + " (до след. РБ: " + ChatColor.GOLD + gamePlayer.getLevelForRebith() + ChatColor.AQUA + ")").setScore(9);
+        objective.getScore(ChatColor.AQUA + "РБ уровень: " + ChatColor.GOLD + gamePlayer.getRebithLevel()).setScore(8);
         objective.getScore(ChatColor.AQUA + "Прогресс: " + ChatColor.GOLD + gamePlayer.getProgress() + "% " + gamePlayer.lastProg).setScore(7);
         objective.getScore(ChatColor.AQUA + "Баланс: " + ChatColor.GOLD + gamePlayer.gold).setScore(6);
         objective.getScore("  ").setScore(5);

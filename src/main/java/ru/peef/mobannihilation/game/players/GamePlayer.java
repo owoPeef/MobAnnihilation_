@@ -79,6 +79,7 @@ public class GamePlayer {
     public String getName() { return player == null ? name : player.getName(); }
     public Player getPlayer() { return player; }
     public int getLevel() { return (int) Math.floor(level); }
+    public int getRebithLevel() { return (int) (Math.floor(level) * rebithCount); }
     public int getProgress() { return (int) Math.floor((level - Math.floor(level)) * 100); }
 
     public void save() { PlayerDataHandler.savePlayer(this); }
