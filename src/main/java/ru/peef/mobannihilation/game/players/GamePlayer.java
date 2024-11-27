@@ -258,7 +258,7 @@ public class GamePlayer {
                 List<String> lore = new ArrayList<>();
                 itemMeta.setDisplayName(ChatColor.RESET + (ChatColor.GOLD + item.getTitle()));
 
-                lore.add(ChatColor.GREEN + "Редкость: " + item.getRarityString() + ChatColor.GRAY + " (" + item.boostPercent + (item.boostIsPercent ? "%" : "") + ")");
+                lore.add(ChatColor.GREEN + "Процент:" + item.boostPercent + (item.boostIsPercent ? "%" : ""));
                 if (item.getChance() != 0) lore.add(ChatColor.GREEN + "Шанс выпадения: " + ChatColor.GOLD + Utils.roundTo(item.getChance(), 2) + "%");
                 lore.add(ChatColor.GRAY + item.getDescription());
 
@@ -272,7 +272,7 @@ public class GamePlayer {
                 TextComponent message = new TextComponent(ChatColor.AQUA + "Получен предмет: ");
                 TextComponent hoverMessage = new TextComponent(ChatColor.GOLD + "[" + item.getTitle() + "]");
                 hoverMessage.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(ChatColor.GOLD + item.getTitle() + "\n" +
-                        ChatColor.GREEN + "Редкость: " + item.getRarityString() + ChatColor.GRAY + " (" + item.boostPercent + (item.boostIsPercent ? "%" : "") + ")" + "\n" +
+                        ChatColor.GREEN + "Процент:" + item.boostPercent + (item.boostIsPercent ? "%" : "") + "\n" +
                         ChatColor.AQUA + item.getDescription()
                 ).create()));
                 message.addExtra(hoverMessage);
